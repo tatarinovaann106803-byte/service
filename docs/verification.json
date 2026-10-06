@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-06",
+  "python_tests_passed": 59,
+  "ruff": "passed",
+  "javascript_syntax": "passed",
+  "browser": "manual-weather calculation, 32-item crop select, simplified labels, variant preview; no FAO or methodology section",
+  "nasa_live": "failed: network/TLS; precipitation/season verified with fixtures",
+  "deployment": "Render and Tilda templates prepared, not deployed; map integration not live-tested",
+  "scientific_validation": "scenario response not field-validated",
+  "numpy_json_regression": "Reproduced int64 failure; tested normalization, storage round trip, selection, POST/GET response, rejection of nonfinite values and unsupported objects",
+  "owner_mount": "401 for unauthenticated form and calculations, authenticated independent calculation with full configurations; no SQLite write; public projection excludes configuration",
+  "pv_module": "610 W, 2.382 × 1.134 m; STC efficiency derived, area-based generation with POA, 0.85 aggregate PR, geometry/clearance and power equivalence regression passed",
+  "browser_current_changes": "JavaScript syntax checked; new owner UI not visually verified in this run (local server binding restricted)"
+}

@@ -1,0 +1,116 @@
+<style>
+  #av-widget { max-width:1200px; margin:0 auto; padding:24px 16px; color:#213a32; font:16px/1.5 Arial,sans-serif; }
+  #av-widget * { box-sizing:border-box; }
+  #av-widget h2 { margin:0 0 8px; font-size:clamp(24px,4vw,36px); line-height:1.2; }
+  #av-widget p { margin:10px 0 18px; }
+  #av-widget .av-muted { color:#66776e; font-size:14px; }
+  #av-widget .av-map { height:400px; width:100%; border:1px solid #dce4dc; border-radius:16px; overflow:hidden; background:#f4f6f0; }
+  #av-widget iframe { display:block; width:100%; height:1700px; border:1px solid #dce4dc; border-radius:16px; background:#f4f6f0; }
+  #av-widget a { color:#1f6348; }
+  #av-widget [hidden] { display:none!important; }
+  @media(max-width:600px) { #av-widget .av-map { height:320px; } #av-widget iframe { height:1250px; } }
+</style>
+<section id="av-widget" aria-label="Расчёт агривольтаики">
+  <h2>Выберите участок на карте</h2>
+  <div id="av-map" class="av-map" aria-label="Яндекс Карта для выбора участка"></div>
+  <p id="av-map-status" class="av-muted" role="status">Загружаем карту…</p>
+  <p id="av-service-status" class="av-muted" role="status">Подключаем калькулятор…</p>
+  <iframe id="av-calculator" title="Калькулятор агривольтаики" hidden></iframe>
+  <p id="av-fallback" hidden><a id="av-open-calculator" target="_blank" rel="noopener noreferrer" hidden>Открыть калькулятор в отдельной вкладке</a></p>
+</section>
+<script>
+(function () {
+  'use strict';
+  const CONFIG = {
+    renderUrl: 'https://service-av.onrender.com',
+    yandexApiKey: 'YOUR_YANDEX_MAPS_API_KEY'
+  };
+  const root = document.getElementById('av-widget');
+  if (root.dataset.initialized) return;
+  root.dataset.initialized = 'true';
+  const get = id => document.getElementById(id);
+  const frame = get('av-calculator');
+  const status = get('av-service-status');
+  const mapStatus = get('av-map-status');
+  let selected = null, serviceReady = false, serviceOrigin = null;
+
+  function sendLocation() {
+    if (!selected || !serviceReady) return;
+    frame.contentWindow.postMessage({type:'agrivoltaic:location', ...selected}, serviceOrigin);
+    status.hidden = true;
+  }
+  try {
+    const url = new URL(CONFIG.renderUrl);
+    if (url.protocol !== 'https:' || url.hostname === 'your-service.onrender.com' || url.username || url.password) throw new Error();
+    serviceOrigin = url.origin;
+    let timer;
+    window.addEventListener('message', event => {
+      if (event.origin !== serviceOrigin || event.source !== frame.contentWindow) return;
+      if (!event.data || event.data.type !== 'agrivoltaic:ready') return;
+      clearTimeout(timer);
+      serviceReady = true;
+
+      status.hidden = true;
+      get('av-fallback').hidden = true;
+      sendLocation();
+    });
+    timer = setTimeout(() => {
+      if (!serviceReady) {
+        status.hidden = false;
+        status.textContent = 'Загрузка занимает больше времени, чем обычно.';
+        get('av-fallback').hidden = false;
+      }
+    }, 60000);
+    frame.src = serviceOrigin + '/calculator?embed=1';
+    frame.hidden = false;
+    get('av-open-calculator').href = serviceOrigin + '/calculator';
+    get('av-open-calculator').hidden = false;
+  } catch (_) {
+    status.textContent = 'Калькулятор временно недоступен.';
+  }
+
+  if (!CONFIG.yandexApiKey || CONFIG.yandexApiKey === 'YOUR_YANDEX_MAPS_API_KEY') {
+    mapStatus.textContent = 'Карта временно недоступна.';
+    return;
+  }
+  const script = document.createElement('script');
+  const params = new URLSearchParams({
+    apikey:CONFIG.yandexApiKey, lang:'ru_RU', coordorder:'latlong',
+    ns:'agrivoltaicYmaps', onload:'agrivoltaicMapReady', onerror:'agrivoltaicMapError'
+  });
+  let mapInitialized = false;
+  window.agrivoltaicMapError = function () {
+    mapStatus.hidden = false;
+    mapStatus.textContent = 'Не удалось загрузить карту. Обновите страницу.';
+  };
+  window.agrivoltaicMapReady = function (maps) {
+    if (mapInitialized) return;
+    mapInitialized = true;
+    try {
+      const map = new maps.Map('av-map', {
+        center:[45,38], zoom:5, controls:['zoomControl','typeSelector']
+      });
+      map.behaviors.disable('scrollZoom');
+      let marker;
+      mapStatus.hidden = true;
+      map.events.add('click', event => {
+        const coords = event.get('coords');
+        if (!Array.isArray(coords) || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]) || Math.abs(coords[0]) > 90) return;
+        selected = {lat:coords[0], lon:((coords[1]+180)%360+360)%360-180};
+        const position = [selected.lat,selected.lon];
+        if (!marker) {
+          marker = new maps.Placemark(position, {hintContent:'Выбранный участок'}, {preset:'islands#greenDotIcon'});
+          map.geoObjects.add(marker);
+        } else marker.geometry.setCoordinates(position);
+
+
+        sendLocation();
+      });
+    } catch (_) { window.agrivoltaicMapError(); }
+  };
+  script.src = 'https://api-maps.yandex.ru/2.1/?' + params;
+  script.async = true;
+  script.onerror = window.agrivoltaicMapError;
+  document.head.appendChild(script);
+})();
+</script>
