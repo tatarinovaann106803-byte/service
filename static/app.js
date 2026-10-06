@@ -162,8 +162,10 @@ function weatherSignature(){return ["lat","lon","weather_year","season_start_mon
 for(const name of ["lat","lon","weather_year","season_start_month","season_end_month"])form.elements[name].addEventListener("input",()=>{if($("weather-source").value==="nasa"){for(const key of ["radiation_annual","growing_season_temperature_c","growing_season_rainfall_mm"]){form.elements[key].value="";delete form.elements[key].dataset.loaded;}$("weather-status").textContent="Условия изменены. Загрузите погоду заново или начните расчёт.";}});
 
 // Only the configured Tilda parent may supply map coordinates.
-fetch(apiUrl("/integration/config")).then(r=>r.json()).then(config=>{
+fetch(apiUrl("/integration/config")).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(config=>{
  const parents=new Set(config.parent_origins);
+ if(embedded&&!parents.size){showError("Карта не подключена к калькулятору: адрес сайта не настроен. Обратитесь к владельцу сайта.");return;}
+ if(embedded&&document.referrer){const parentOrigin=new URL(document.referrer).origin;if(!parents.has(parentOrigin)){showError("Калькулятор не подключён к карте на этом адресе сайта. Обратитесь к владельцу сайта.");return;}}
  window.addEventListener("message",event=>{
   if(window.parent===window||event.source!==window.parent||!parents.has(event.origin))return;
   const data=event.data;
