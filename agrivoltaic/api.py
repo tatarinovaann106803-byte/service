@@ -3,6 +3,7 @@
 import logging
 import os
 from threading import BoundedSemaphore
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
@@ -120,11 +121,32 @@ def weather_preview(
 
 
 def tilda_origins():
-    return [
-        origin.strip().rstrip("/")
-        for origin in os.getenv("TILDA_ORIGINS", "").split(",")
-        if origin.strip().startswith(("https://", "http://localhost:", "http://127.0.0.1:"))
-    ]
+    origins = []
+    for value in os.getenv("TILDA_ORIGINS", "").split(","):
+        try:
+            url = urlsplit(value.strip())
+            if (
+                url.scheme not in {"http", "https"}
+                or not url.hostname
+                or "*" in url.netloc
+                or url.username
+                or url.password
+                or url.path not in {"", "/"}
+                or url.query
+                or url.fragment
+            ):
+                continue
+            host = url.hostname.encode("idna").decode("ascii")
+            if ":" in host:
+                host = f"[{host}]"
+            port = url.port
+            suffix = f":{port}" if port and port != {"http": 80, "https": 443}[url.scheme] else ""
+            origin = f"{url.scheme}://{host}{suffix}"
+            if origin not in origins:
+                origins.append(origin)
+        except (ValueError, UnicodeError):
+            continue
+    return origins
 
 
 @app.get("/integration/config")
