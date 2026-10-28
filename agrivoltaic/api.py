@@ -14,6 +14,7 @@ from pydantic import Field
 
 from .coefficients import product_catalog
 from .config import STATIC
+from .costs import cost_catalog
 from .optimization import optimize, public_result
 from .owner import create_owner_app
 from .public_schemas import PublicRequest
@@ -57,6 +58,11 @@ def health():
 @app.get("/calculator", include_in_schema=False)
 def page():
     return FileResponse(STATIC / "index.html")
+
+
+@app.get("/cost-benchmarks")
+def cost_benchmarks():
+    return cost_catalog()
 
 
 @app.get("/products")
