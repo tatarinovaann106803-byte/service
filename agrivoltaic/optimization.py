@@ -9,6 +9,7 @@ import numpy as np
 from .agronomy import crop_risks, water_balance
 from .catalogs import crop_yield
 from .coefficients import coefficient, product_catalog
+from .costs import resolve_cost
 from .economics import calculate_economics
 from .energy import PANEL_LENGTH_M, annual_to_monthly
 from .nsga2 import crowding, search
@@ -139,7 +140,7 @@ def optimize(request):
     reference = mechanism(reference_light, reference_geometry[1], env, request.sector)
     multiplier = 1000 if request.sector == "aqua" else 1
     baseline_income = request.base_productivity * request.product_price * request.area_ha * multiplier
-    base_cost = policy["capex_per_kw"][request.sector]
+    base_cost, cost_basis = resolve_cost(request, policy)
 
     def evaluate(geometry, w=WEATHER_SCENARIOS[0], economic=ECONOMIC_SCENARIOS[0], calibration=1):
         local_env = replace(
@@ -298,6 +299,7 @@ def optimize(request):
         "coefficient": estimate,
         "weather": weather,
         "policy": policy,
+        "cost_basis": cost_basis,
         "reference_geometry": reference_geometry,
         "reference_mechanism": reference,
         "search": {
@@ -352,6 +354,11 @@ def public_result(request, record, calculation_id):
     request = request.model_copy(update={"base_productivity": record["resolved_inputs"]["base_productivity"]})
     return {
         "calculation_id": calculation_id,
+        "cost_basis": record.get("cost_basis"),
+        "currency": "RUB",
+        "display_currency": request.display_currency,
+        "usd_rub": request.usd_rub,
+        "fx_date": request.fx_date,
         "product_name": request.product_name,
         "sector": request.sector,
         "area_ha": request.area_ha,
