@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "unit": "USD/kWdc",
+  "currency_year": 2024,
+  "scope": "Historical PV-only benchmarks, not current quotes or agrivoltaic observations. No automatic inflation adjustment. AV premium and height adjustment are separate assumptions. Missing countries require manual or explicitly selected legacy costs.",
+  "records": [
+    {
+      "id": "irena_2024_IN",
+      "country": "India",
+      "country_code": "IN",
+      "aliases": [
+        "Индия"
+      ],
+      "usd_per_kw_dc": 525,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "Table 3.1, p. 95; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
+      "id": "irena_2024_CN",
+      "country": "China",
+      "country_code": "CN",
+      "aliases": [
+        "Китай"
+      ],
+      "usd_per_kw_dc": 591,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "Table 3.1, p. 95; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
+      "id": "irena_2024_BR",
+      "country": "Brazil",
+      "country_code": "BR",
+      "aliases": [
+        "Бразилия"
+      ],
+      "usd_per_kw_dc": 724,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "Table 3.1, p. 95; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
+      "id": "irena_2024_US",
+      "country": "United States of America",
+      "country_code": "US",
+      "aliases": [
+        "USA",
+        "United States",
+        "США"
+      ],
+      "usd_per_kw_dc": 1058,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "Table 3.1, p. 95; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
+      "id": "irena_2024_TR",
+      "country": "Türkiye",
+      "country_code": "TR",
+      "aliases": [
+        "Turkey",
+        "Турция"
+      ],
+      "usd_per_kw_dc": 1033,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "p. 94; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
+      "id": "doe_2025q1_US_mmp",
+      "country": "United States of America",
+      "country_code": "US",
+      "aliases": [
+        "USA",
+        "United States",
+        "США"
+      ],
+      "usd_per_kw_dc": 1120,
+      "data_year": 2025,
+      "price_year": 2024,
+      "technology": "100 MWdc utility-scale PV, single-axis tracking, without storage",
+      "basis": "Modeled market price (MMP), 2025 Q1; excludes owner subsidies",
+      "source": "US DOE PVSCM 2025 Q1",
+      "source_url": "https://www.energy.gov/cmei/systems/solar-photovoltaic-system-cost-benchmarks",
+      "source_location": "Table 2: UPV PV-only, MMP 1.12 USD/Wdc",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    }
+  ],
+  "reviewed_sources": [
+    {
+      "url": "https://www.iea.org/reports/world-energy-investment-2026",
+      "use": "Context only: no comparable numeric country PV-only USD/kW table verified in accessible report pages."
+    }
+  ]
+}
