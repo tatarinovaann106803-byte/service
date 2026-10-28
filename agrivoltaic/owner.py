@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .coefficients import product_catalog
 from .config import STATIC
+from .costs import cost_catalog
 from .optimization import optimize, public_result
 from .public_schemas import PublicRequest
 from .storage import json_compatible
@@ -66,6 +67,10 @@ def create_owner_app(password: str, username: str = "owner"):
             'src="/static/', f'src="{prefix}/static/'
         )
         return page.replace('href="/calculator"', f'href="{prefix}/"')
+
+    @app.get("/cost-benchmarks")
+    def cost_benchmarks():
+        return cost_catalog()
 
     @app.get("/products")
     def products():
