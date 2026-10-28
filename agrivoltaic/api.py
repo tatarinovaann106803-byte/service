@@ -57,7 +57,7 @@ def health():
 
 @app.get("/calculator", include_in_schema=False)
 def page():
-    return FileResponse(STATIC / "index.html")
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/cost-benchmarks")
