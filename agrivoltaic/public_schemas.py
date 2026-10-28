@@ -35,6 +35,13 @@ class PublicRequest(InputModel):
     energy_price: NonNegative
     capital: Capital = Field(default_factory=Capital)
     project_years: Annotated[int, Field(ge=1, le=100)] = 25
+    capex_mode: Literal["legacy", "country", "manual"] = "legacy"
+    capex_benchmark_id: str | None = None
+    capex_per_kw_rub: Annotated[float, Field(gt=0, le=1e8)] | None = None
+    av_premium_pct: Annotated[float, Field(ge=0, le=1000)] = 0
+    usd_rub: Annotated[float, Field(gt=0, le=10000)] = 85.7116
+    fx_date: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}$")] = "2026-10-07"
+    display_currency: Literal["RUB", "USD"] = "RUB"
     budget_rub: Annotated[float, Field(gt=0, le=1e12)] | None = None
     radiation_annual: Annotated[float, Field(ge=0, le=4000)] | None = None
     weather_year: Annotated[int, Field(ge=1984, le=2100)] = 2024
@@ -45,3 +52,14 @@ class PublicRequest(InputModel):
     irrigation_mm: Annotated[float, Field(ge=0, le=10000)] = 250
     water: PublicWater | None = None
     risks: Risks | None = None
+
+    @model_validator(mode="after")
+    def cost_inputs(self):
+        if self.capex_mode == "manual" and self.capex_per_kw_rub is None:
+            raise ValueError("Manual CAPEX requires a positive cost per kWdc.")
+        if self.capex_mode == "country" and not self.capex_benchmark_id:
+            raise ValueError("Select a country CAPEX benchmark.")
+        from datetime import date
+
+        date.fromisoformat(self.fx_date)
+        return self
