@@ -59,6 +59,24 @@
       "agrivoltaic": false
     },
     {
+      "id": "irena_2024_UZB",
+      "country": "Uzbekistan",
+      "country_code": "UZB",
+      "aliases": [
+        "Узбекистан"
+      ],
+      "usd_per_kw_dc": 500,
+      "data_year": 2024,
+      "price_year": 2024,
+      "technology": "Utility-scale solar PV without storage",
+      "basis": "Weighted-average total installed cost",
+      "source": "IRENA Renewable Power Generation Costs in 2024 (2025)",
+      "source_url": "https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf",
+      "source_location": "Table 3.1, p. 95; DC convention p. 92",
+      "retrieved_on": "2026-10-28",
+      "agrivoltaic": false
+    },
+    {
       "id": "irena_2024_US",
       "country": "United States of America",
       "country_code": "US",
