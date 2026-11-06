@@ -204,6 +204,8 @@ const translations = {
   "USD": "USD"
 };
 Object.assign(translations,{"Алоэ вера": "Aloe vera", "Арахис IAC-385": "Peanut IAC-385", "Баклажан": "Eggplant", "Батат": "Sweet potato", "Болгарский перец": "Bell pepper", "Брокколи": "Broccoli", "Виноград": "Grape", "Груша": "Pear", "Зеленый перец": "Green pepper", "Кабачок": "Zucchini", "Клевер": "Clover", "Малина": "Raspberry", "Мискантус": "Miscanthus", "Озимая пшеница": "Winter wheat", "Перец Bola": "Bola pepper", "Перец Чильтепин": "Chiltepin pepper", "Рапс": "Rapeseed", "Рис BRRI-33": "Rice BRRI-33", "Свекла": "Beet", "Сельдерей": "Celery", "Тимофеевка луговая": "Timothy grass", "Томат Solanum lycopersicon": "Tomato (Solanum lycopersicon)", "Травяно-клеверная смесь": "Grass–clover mixture", "Халапеньо": "Jalapeño", "Чили перец": "Chili pepper", "Яровой ячмень": "Spring barley", "Ячмень Дракон": "Barley Drakon"});
+Object.assign(translations,{"Животноводство": "Livestock", "Поголовье, голов": "Number of animals", "КРС — молочное направление": "Dairy cattle", "КРС — молодняк": "Young cattle", "Овцы — прирост живой массы": "Sheep — liveweight gain", "Куры-несушки": "Laying hens", "Свиньи": "Pigs", "кг/голову/год": "kg/head/year", "шт./голову/год": "eggs/head/year", "Базовая продуктивность, кг/голову/год": "Baseline production, kg/head/year"});
+Object.assign(translations,{"Источник продуктивности":"Production data source","Из базы исследований":"Study database","Дней лактации или откорма в году":"Lactation or fattening days per year","Продуктивность животных из БД":"Livestock study baseline"});
 function t(text) {
  if (avLanguage === "ru" || typeof text !== "string") return text;
  return translations[text] || text;

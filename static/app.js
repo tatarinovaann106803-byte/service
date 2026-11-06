@@ -19,6 +19,7 @@ function translatedError(message){
  return text;
 }
 function refreshCurrencyLabels(){
+ queueMicrotask(livestockLabels);
  document.querySelectorAll("label,th").forEach(el=>{
   const walk=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
   while(walk.nextNode()){
@@ -101,7 +102,7 @@ queueMicrotask(()=>{
   for(const id of ["season-start","season-end"])Array.from($(id).options).forEach((o,i)=>o.textContent=new Intl.DateTimeFormat(avLanguage,{month:"long",timeZone:"UTC"}).format(new Date(Date.UTC(2024,i,1))));
   // Rebuild labels generated from dictionaries without touching their input nodes.
   document.querySelectorAll(".hazard").forEach((section,i)=>{section.querySelector("h3").textContent=t(["Заморозки","Засуха","Град"][i]);section.querySelectorAll("label").forEach((label,j)=>{label.firstChild.textContent=t(["Вероятность события, %/год","Потеря при событии, %","Предельное снижение вероятности, %","Предельное снижение тяжести, %"][j]);});});
-  const sector=$("sector").value;$("yield-label").textContent=t({crop:"Базовая продуктивность, кг/га/год",aqua:"Базовая продуктивность, т/га/год",forest:"Базовая продуктивность, м³/га/год"}[sector]);$("price-label").textContent=t(sector==="forest"?"Цена продукции, руб/м³":"Цена продукции, руб/кг");
+  const sector=$("sector").value;$("yield-label").textContent=t({crop:"Базовая продуктивность, кг/га/год",aqua:"Базовая продуктивность, т/га/год",forest:"Базовая продуктивность, м³/га/год",livestock:"Базовая продуктивность, кг/голову/год"}[sector]);$("price-label").textContent=t(sector==="forest"?"Цена продукции, руб/м³":"Цена продукции, руб/кг");
   sync();populateBenchmarks();refreshCurrencyLabels();rerenderPresentation();updateLocaleUrl();
   if(mapLocationNote)mapLocationNote.textContent=mapLocationSelected?`${phrase("Участок выбран на карте:","Site selected on the map:")} ${form.elements.lat.value}, ${form.elements.lon.value}`:t("Выберите участок на карте выше.");
  });
@@ -144,6 +145,9 @@ for(const [key,name] of Object.entries(hazards)){
 function toggle(id,visible){const el=$(id);el.hidden=!visible;el.querySelectorAll("input,select").forEach(x=>{x.disabled=!visible;x.required=visible&&x.type!=="checkbox";});}
 function sync(){
  const crop=$("sector").value==="crop";
+ toggle("animal-count-field",$("sector").value==="livestock");
+ toggle("animal-baseline-mode-field",$("sector").value==="livestock");
+ if($("sector").value!=="livestock"){toggle("animal-days-field",false);form.elements.base_productivity.readOnly=false;}
  document.querySelectorAll(".crop-only").forEach(s=>{s.hidden=!crop;s.querySelectorAll("input").forEach(i=>i.disabled=!crop);});
  toggle("baseline-mode-field",crop);toggle("baseline-field",!crop||$("baseline-mode").value==="manual");
  toggle("water-fields",crop&&$("water-enabled").checked);toggle("risks-fields",crop&&$("risks-enabled").checked);
@@ -153,20 +157,40 @@ function sync(){
  for(const name of ["radiation_annual","growing_season_temperature_c","growing_season_rainfall_mm"]){const field=form.elements[name];field.readOnly=automatic;field.required=!automatic;if(automatic&&!field.dataset.loaded)field.value="";}
  $("weather-status").textContent=automatic?t("Погода загружается по координатам и выбранному сезону."):t("Введите погодные данные за выбранный сезон.");
 }
+function livestockLabels(){
+ if($("sector").value!=="livestock")return;
+ const eggs=$("product-list").value==="Куры-несушки";
+ const entry=(catalog.livestock||[]).find(p=>p.name===$("product-list").value);
+ const available=entry?.baseline_daily_kg_per_head!=null;
+ $("animal-baseline-mode").options[0].disabled=!available;
+ if(!available)$("animal-baseline-mode").value="manual";
+ const automatic=$("animal-baseline-mode").value==="database";
+ toggle("animal-days-field",automatic);
+ form.elements.base_productivity.readOnly=automatic;
+ if(automatic){const days=Number($("animal-days").value);form.elements.base_productivity.value=days>0?Number((entry.baseline_daily_kg_per_head*days).toFixed(6)):"";}
+ $("yield-label").textContent=eggs?phrase("Яйценоскость, шт./голову/год","Egg production, eggs/head/year"):phrase("Продуктивность, кг/голову/год","Production, kg/head/year");
+ $("price-label").textContent=phrase("Цена продукции, ","Product price, ")+uiCurrency+(eggs?phrase("/шт.","/egg"):"/kg");
+ $("baseline-note").textContent=phrase("Введите годовой надой, прирост живой массы или число яиц на голову. Коэффициент изменения подставляется из БД; площадь используется для расчёта СЭС.","Enter annual milk yield, liveweight gain or eggs per head. The response coefficient comes from the database; land area determines the PV installation.");
+ if(automatic)$("baseline-note").textContent=phrase(`Контроль в исследованиях: ${fmt(entry.baseline_daily_kg_per_head,4)} кг/голову/сутки × число дней. Это ориентир из опыта, не средняя по стране.`,`Study control: ${fmt(entry.baseline_daily_kg_per_head,4)} kg/head/day × productive days. Experimental reference, not a national average.`);
+}
+$("animal-baseline-mode").addEventListener("change",livestockLabels);
+$("animal-days").addEventListener("input",livestockLabels);
+$("product-list").addEventListener("change",()=>{if($("sector").value==="livestock"){form.elements.base_productivity.value="";form.elements.product_price.value="";}livestockLabels();});
 function updateCatalog(){
  const previous=$("product-list").value;
  $("product-list").replaceChildren();for(const item of catalog[$("sector").value]||[]){const op=document.createElement("option");op.value=item.name;op.textContent=t(item.name);$("product-list").append(op);}
  const names=(catalog[$("sector").value]||[]).map(item=>item.name);
  if(names.includes(previous))$("product-list").value=previous;
  else if(names.includes("Пшеница"))$("product-list").value="Пшеница";
+ livestockLabels();
 }
 for(const id of ["baseline-mode","water-enabled","risks-enabled","capital-method","weather-source"])$(id).addEventListener("change",sync);
 $("sector").addEventListener("change",()=>{
  const s=$("sector").value;
- const cfg={crop:["Пшеница",4000,15,t("Базовая продуктивность, кг/га/год"),t("Цена продукции, руб/кг")],aqua:["Белоногая креветка",5,150,t("Базовая продуктивность, т/га/год"),t("Цена продукции, руб/кг")],forest:["Тополь",5,5000,t("Базовая продуктивность, м³/га/год"),t("Цена продукции, руб/м³")]}[s];
+ const cfg={crop:["Пшеница",4000,15,t("Базовая продуктивность, кг/га/год"),t("Цена продукции, руб/кг")],aqua:["Белоногая креветка",5,150,t("Базовая продуктивность, т/га/год"),t("Цена продукции, руб/кг")],livestock:["КРС — молочное направление","","",t("Базовая продуктивность, кг/голову/год"),t("Цена продукции, руб/кг")],forest:["Тополь",5,5000,t("Базовая продуктивность, м³/га/год"),t("Цена продукции, руб/м³")]}[s];
  ["product_name","base_productivity","product_price"].forEach((k,i)=>form.elements[k].value=cfg[i]);$("yield-label").textContent=cfg[3];$("price-label").textContent=cfg[4];
  $("baseline-note").textContent=s==="crop"?t("Средняя урожайность страны — ориентир. Если есть данные вашего поля, выберите ручной ввод."):t("Укажите базовую продуктивность вашего хозяйства.");
- updateCatalog();sync();if(uiCurrency==="USD")form.elements.product_price.value=Number(cfg[2])/fxRate();refreshCurrencyLabels();
+ updateCatalog();sync();if(uiCurrency==="USD"&&cfg[2]!=="")form.elements.product_price.value=Number(cfg[2])/fxRate();refreshCurrencyLabels();livestockLabels();
 });
 form.addEventListener("input",()=>{if(result){$("stale").hidden=false;$("choose").disabled=true;}});
 fetch(apiUrl("/products")).then(r=>r.json()).then(data=>{catalog=data;updateCatalog();}).catch(()=>{showError(t("Не удалось загрузить список культур. Обновите страницу."));$("calculate").disabled=true;});
@@ -175,6 +199,7 @@ function payload(){
  const f=new FormData(form),n=k=>Number(f.get(k));
  const r={sector:f.get("sector"),product_name:f.get("product_name"),country:f.get("country")};
  for(const k of ["lat","lon","area_ha","product_price","energy_price","project_years","weather_year","season_start_month","season_end_month","irrigation_mm"])r[k]=n(k);
+ if(r.sector==="livestock"){r.animal_count=n("animal_count");r.livestock_baseline_mode=f.get("livestock_baseline_mode");if(r.livestock_baseline_mode==="database")r.productive_days=n("productive_days");}
  if(r.sector!=="crop"||f.get("baseline_mode")==="manual")r.base_productivity=n("base_productivity");
  if(f.get("budget_rub"))r.budget_rub=n("budget_rub");
  if(f.get("weather_source")==="manual"){for(const key of ["radiation_annual","growing_season_temperature_c","growing_season_rainfall_mm"])r[key]=n(key);}
@@ -209,6 +234,7 @@ function preview(index){
  $("income").textContent=money(e.net_income,true);
  $("effects").replaceChildren();
  if(ownerView&&v.configuration){const g=v.configuration;effect(t("Модуль"),`${fmt(g.panel_power_w)} W · ${fmt(g.panel_length_m*1000)} × ${fmt(g.panel_width_m*1000)} mm`);effect(t("КПД модуля"),fmt(g.panel_efficiency*100,2)+"%");effect(t("Площадь модулей"),fmt(g.panel_area_total_m2,1)+" "+t("м²")+"");effect(t("Азимут"),fmt(g.azimuth_deg)+"°");effect(t("Просвет под нижним краем"),fmt(g.lower_edge_height_m,2)+" "+t("м")+"");effect(t("Шаг рядов"),fmt(g.pitch_m,2)+" "+t("м")+"");effect(t("Высота центра панелей"),fmt(g.height_m,2)+" "+t("м")+"");effect(t("Наклон"),fmt(g.tilt_deg,1)+"°");effect(t("Количество модулей"),fmt(g.num_panels));effect(t("Отношение площади модулей к земле"),fmt(100*g.gcr,1)+"%");effect(t("Проекция покрытия"),fmt(100*g.projected_coverage,1)+"%");}
+ renderLivestock(v);
  effect(t("Инвестиции"),money(e.capex));effect(t("Простая окупаемость"),e.roi_years==null?t("Не достигнута"):fmt(e.roi_years,1)+" "+t("лет")+"");effect(t("Дисконтированная окупаемость"),e.discounted_payback_years==null?t("Не достигнута"):fmt(e.discounted_payback_years,1)+" "+t("лет")+"");
  if(v.water.status!=="not_configured"){effect(t("Экономия воды"),fmt(v.water.saved_m3_year)+" "+t("м³/год"));effect(t("Снижение полива"),fmt(v.water.irrigation_reduction_pct,1)+"%");effect(t("Экономия на поливе"),money(v.water.annual_savings_rub)+phrase("/год","/year"));}
  $("risk-results").replaceChildren();if(v.risks.perils){for(const [key,p] of Object.entries(v.risks.perils)){const text=document.createElement("p");text.className="hint";text.textContent=`${t({frost:"Заморозки",drought:"Засуха",hail:"Град"}[key])}: ${fmt(p.baseline_probability_pct,2)}% → ${fmt(p.av_probability_pct,2)}%. ${phrase("Изменение ожидаемых потерь","Change in expected losses")}: ${money(p.avoided_expected_loss_rub)}${phrase("/год","/year")}.`;$("risk-results").append(text);}}
@@ -296,3 +322,25 @@ fetch(apiUrl("/integration/config")).then(r=>{if(!r.ok)throw new Error();return 
  });
  if(window.parent!==window){for(const origin of parents)window.parent.postMessage({type:"agrivoltaic:ready"},origin);}
 }).catch(()=>{if(embedded)showError(t("Не удалось подключить карту к калькулятору. Обновите страницу."));});
+
+function renderLivestock(v){
+ document.getElementById('livestock-results')?.remove();
+ if(!v.livestock)return;
+ const a=v.livestock,box=document.createElement('div');box.id='livestock-results';
+ const title=document.createElement('h3');title.textContent=phrase('Животноводство и микроклимат','Livestock and microclimate');box.append(title);
+ const list=document.createElement('dl');box.append(list);
+ const row=(label,value)=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;list.append(dt,dd);};
+ if(a.baseline_mode==='database')row(phrase('Исходная продуктивность из БД','Database baseline'),fmt(a.baseline_daily_kg_per_head,4)+' kg/head/day × '+a.productive_days+phrase(' дней',' days'));
+ row(phrase('Продукция всего за год','Total annual production'),fmt(a.annual_total_production,1)+' '+(a.product_unit==='eggs'?phrase('шт.','eggs'):'kg'));
+ row(phrase('Снижение облучённости у земли','Ground irradiance reduction'),fmt(a.microclimate.irradiance_reduction_pct,1)+'%');
+ row(phrase('Изменение температуры воздуха · сценарная оценка','Air temperature change · scenario estimate'),fmt(a.microclimate.air_temperature_change_c,2)+' °C');
+ row(phrase('Изменение влажности воздуха','Relative humidity change'),phrase('Нет коэффициента в БД','No database coefficient'));
+ const note=document.createElement('p');note.className='hint';
+ note.textContent=a.reference_change_pct==null?phrase('Данных об изменении продуктивности нет. Для расчёта экономики принято отсутствие изменения; это допущение, а не результат опыта.','No production response data. Economic calculations assume unchanged production; this is an assumption, not an experimental result.'):
+ phrase(`Исходное среднее БД: ${fmt(a.reference_change_pct,2)}%; площадок: ${a.sites}, наблюдений: ${a.observations}. Различия в опытах статистически не подтверждены. Расчётная поправка на затенение не прошла полевую валидацию.`,`Database reference mean: ${fmt(a.reference_change_pct,2)}%; sites: ${a.sites}, observations: ${a.observations}. Experimental differences were not statistically significant. The shading adjustment has not been field validated.`);
+ box.append(note);
+ const microNote=document.createElement('p');microNote.className='hint';microNote.textContent=phrase('Температура воздуха рассчитана прежней сценарной моделью сервиса. Это не измерение и не обученная модель микроклимата животноводства.','Air temperature uses the service’s existing scenario model. It is not a measurement or a trained livestock microclimate model.');box.append(microNote);
+ if(a.reference_metrics.length){const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=phrase('Справочные эффекты в исследованиях','Reference effects in studies');details.append(summary);for(const m of a.reference_metrics){const p=document.createElement('p');p.className='hint';p.textContent=(avLanguage==='en'?m.label_en:m.label)+': '+fmt(m.value,2)+' '+(m.unit==='pp'?phrase('п.п.','percentage points'):m.unit)+'. ';if(m.doi?.startsWith('https://doi.org/')){const link=document.createElement('a');link.href=m.doi;link.target='_blank';link.rel='noopener noreferrer';link.textContent='DOI';p.append(link);}details.append(p);}box.append(details);}
+ for(const url of a.sources){const p=document.createElement('p'),link=document.createElement('a');p.className='hint';link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=url;p.append(link);box.append(p);}
+ $('effects').after(box);
+}
