@@ -162,7 +162,7 @@ def test_owner_calculator_without_history(tmp_path):
     assert owner.post("/owner/calculate", json=BASE).status_code == 401
     page = owner.get("/owner/", auth=auth)
     assert '<meta name="api-base" content="/owner">' in page.text
-    assert "/owner/static/app.js" in page.text
+    assert "/owner/static/calculator-20261106.js" in page.text
     assert page.headers["cache-control"] == "no-store"
     response = owner.post("/owner/calculate", json=BASE, auth=auth)
     assert response.status_code == 200, response.text
